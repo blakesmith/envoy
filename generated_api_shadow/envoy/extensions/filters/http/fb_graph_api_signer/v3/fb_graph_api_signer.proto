@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.http.fb_graph_api_signer.v3;
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.http.fb_graph_api_signer.v3";
+option java_outer_classname = "FbGraphApiSignerProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+message FbGraphApiSigner {
+  // The Facebook application secret. You should be able
+  // to retrieve this from your Facebook application dashboard.
+  string app_secret = 1 [(validate.rules).string = {min_len: 1}];
+}

@@ -130,6 +130,7 @@ proto_library(
         "//envoy/extensions/filters/http/ext_authz/v3:pkg",
         "//envoy/extensions/filters/http/ext_proc/v3alpha:pkg",
         "//envoy/extensions/filters/http/fault/v3:pkg",
+        "//envoy/extensions/filters/http/fb_graph_api_signer/v3:pkg",
         "//envoy/extensions/filters/http/grpc_http1_bridge/v3:pkg",
         "//envoy/extensions/filters/http/grpc_http1_reverse_bridge/v3:pkg",
         "//envoy/extensions/filters/http/grpc_json_transcoder/v3:pkg",
