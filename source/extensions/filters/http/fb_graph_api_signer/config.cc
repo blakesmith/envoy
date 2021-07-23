@@ -1,4 +1,5 @@
 #include "source/extensions/filters/http/fb_graph_api_signer/config.h"
+#include "source/extensions/filters/http/fb_graph_api_signer/fb_graph_api_signer_filter.h"
 
 #include "envoy/extensions/filters/http/fb_graph_api_signer/v3/fb_graph_api_signer.pb.h"
 #include "envoy/extensions/filters/http/fb_graph_api_signer/v3/fb_graph_api_signer.pb.validate.h"
@@ -13,7 +14,11 @@ Http::FilterFactoryCb FbGraphApiSignerFilterFactory::createFilterFactoryFromProt
     __attribute__((unused)) const envoy::extensions::filters::http::fb_graph_api_signer::v3::FbGraphApiSigner& config,
     __attribute__((unused)) const std::string& stats_prefix, __attribute__((unused)) Server::Configuration::FactoryContext& context) {
 
-    return nullptr;
+    return [](Http::FilterChainFactoryCallbacks& callbacks) -> void {
+        auto filter = std::make_shared<Filter>();
+        callbacks.addStreamDecoderFilter(filter);
+    };
+
 }
 
 REGISTER_FACTORY(FbGraphApiSignerFilterFactory,
