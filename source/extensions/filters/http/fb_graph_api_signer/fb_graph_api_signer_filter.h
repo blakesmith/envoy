@@ -13,8 +13,6 @@ class Filter: public Http::PassThroughDecoderFilter, Logger::Loggable<Logger::Id
 public:
     Http::FilterHeadersStatus decodeHeaders(Http::RequestHeaderMap& headers,
                                             bool end_stream) override;
-
-    Http::FilterDataStatus decodeData(Buffer::Instance& data, bool end_stream) override;
 };
 
 } // namespace FbGraphApiSigner
