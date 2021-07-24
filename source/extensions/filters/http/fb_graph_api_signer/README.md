@@ -17,6 +17,9 @@ The algorithm is basically:
 
 appsecret_proof will be appended to the request query parameters.
 
+NOTE: If the incoming request already contains an `appsecret_proof`
+query parameter, the filter will pass the request through without signing.
+
 # Usage
 
 Setup a separate envoy listener for the graph API, so you can
@@ -48,7 +51,7 @@ static_resources:
               - match: { prefix: "/" }
                 route:
                   cluster: fb_graph
-                  auto_host_rewrite: true # This is critical, to FB doesn't redirect you.
+                  auto_host_rewrite: true # This is critical, so FB doesn't redirect you
           http_filters:
           - name: envoy.filters.http.fb_graph_api_signer
             typed_config:

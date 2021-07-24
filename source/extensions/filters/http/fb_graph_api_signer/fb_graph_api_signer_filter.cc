@@ -20,11 +20,16 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
     ENVOY_LOG(debug, "fb graph api signer, decode headers");
 
     if (headers.Path() == nullptr) {
-        ENVOY_LOG(debug, "no HTTP URL path found. Skip signing.");
+        ENVOY_LOG(debug, "no HTTP URL path found. skip signing.");
         return Http::FilterHeadersStatus::Continue;
     }
 
     auto params = Http::Utility::parseAndDecodeQueryString(headers.getPathValue());
+    if (params.count(APPSECRET_PROOF_QUERY_PARAM) > 0) {
+        ENVOY_LOG(debug, "existing appsecret_proof found. skip signing.");
+        return Http::FilterHeadersStatus::Continue;
+    }
+
     auto access_token = Filter::extractAccessToken(headers, params);
 
     if (!access_token.has_value()) {
