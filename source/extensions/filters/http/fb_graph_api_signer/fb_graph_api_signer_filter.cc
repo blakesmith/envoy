@@ -1,5 +1,7 @@
 #include "source/extensions/filters/http/fb_graph_api_signer/fb_graph_api_signer_filter.h"
 
+#include "source/common/common/hex.h"
+#include "source/common/crypto/utility.h"
 #include "source/common/http/utility.h"
 
 namespace Envoy {
@@ -9,7 +11,7 @@ namespace FbGraphApiSigner {
 
 const std::string ACCESS_TOKEN_QUERY_PARAM = "access_token";
 
-Http::FilterHeadersStatus Filter::decodeHeaders(__attribute__((unused)) Http::RequestHeaderMap& headers, __attribute__((unused)) bool end_stream) {
+Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers, __attribute__((unused)) bool end_stream) {
     ENVOY_LOG(debug, "fb graph api signer, decode headers");
 
     if (headers.Path() == nullptr) {
@@ -25,6 +27,13 @@ Http::FilterHeadersStatus Filter::decodeHeaders(__attribute__((unused)) Http::Re
     } else {
         auto access_token = access_token_it->second;
         ENVOY_LOG(debug, "Found access token: {}", access_token);
+
+        auto& hashing_util = Envoy::Common::Crypto::UtilitySingleton::get();
+        // TODO: Replace with configured signing key
+        const std::string config_key = std::string("FAKE");
+        const std::vector<uint8_t> signing_key(config_key.begin(), config_key.end());
+        const std::string appsecret_proof = Hex::encode(hashing_util.getSha256Hmac(signing_key, access_token));
+        ENVOY_LOG(debug, "Computed appsecret_proof: {}", appsecret_proof);
     }
 
     return Http::FilterHeadersStatus::Continue;
