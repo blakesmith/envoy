@@ -37,8 +37,9 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
         ENVOY_LOG(debug, "Computed appsecret_proof: {}", appsecret_proof);
 
         params[APPSECRET_PROOF_QUERY_PARAM] = appsecret_proof;
-        auto newPath = Http::Utility::queryParamsToString(params);
-        headers.setPath(newPath);
+        auto stripped_path = Http::Utility::stripQueryString(headers.Path()->value());
+        auto new_path = stripped_path + Http::Utility::queryParamsToString(params);
+        headers.setPath(new_path);
     }
 
     return Http::FilterHeadersStatus::Continue;
