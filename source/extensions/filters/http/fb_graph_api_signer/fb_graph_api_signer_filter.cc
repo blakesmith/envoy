@@ -11,6 +11,8 @@ namespace FbGraphApiSigner {
 
 const std::string ACCESS_TOKEN_QUERY_PARAM = "access_token";
 
+Filter::Filter(const std::shared_ptr<std::string>& app_secret) : app_secret_(app_secret) { }
+
 Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers, __attribute__((unused)) bool end_stream) {
     ENVOY_LOG(debug, "fb graph api signer, decode headers");
 
@@ -29,9 +31,7 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
         ENVOY_LOG(debug, "Found access token: {}", access_token);
 
         auto& hashing_util = Envoy::Common::Crypto::UtilitySingleton::get();
-        // TODO: Replace with configured signing key
-        const std::string config_key = std::string("FAKE");
-        const std::vector<uint8_t> signing_key(config_key.begin(), config_key.end());
+        const std::vector<uint8_t> signing_key(app_secret_->begin(), app_secret_->end());
         const std::string appsecret_proof = Hex::encode(hashing_util.getSha256Hmac(signing_key, access_token));
         ENVOY_LOG(debug, "Computed appsecret_proof: {}", appsecret_proof);
     }

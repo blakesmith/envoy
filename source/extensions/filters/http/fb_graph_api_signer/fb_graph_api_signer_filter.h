@@ -11,8 +11,12 @@ namespace FbGraphApiSigner {
 
 class Filter: public Http::PassThroughDecoderFilter, Logger::Loggable<Logger::Id::filter> {
 public:
+    Filter(const std::shared_ptr<std::string>& app_secret_);
+
     Http::FilterHeadersStatus decodeHeaders(Http::RequestHeaderMap& headers,
                                             bool end_stream) override;
+private:
+    const std::shared_ptr<std::string> app_secret_;
 };
 
 } // namespace FbGraphApiSigner

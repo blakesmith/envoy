@@ -14,8 +14,10 @@ Http::FilterFactoryCb FbGraphApiSignerFilterFactory::createFilterFactoryFromProt
     __attribute__((unused)) const envoy::extensions::filters::http::fb_graph_api_signer::v3::FbGraphApiSigner& config,
     __attribute__((unused)) const std::string& stats_prefix, __attribute__((unused)) Server::Configuration::FactoryContext& context) {
 
-    return [](Http::FilterChainFactoryCallbacks& callbacks) -> void {
-        auto filter = std::make_shared<Filter>();
+    auto signing_key = std::make_shared<std::string>(config.app_secret());
+
+    return [signing_key](Http::FilterChainFactoryCallbacks& callbacks) -> void {
+        auto filter = std::make_shared<Filter>(signing_key);
         callbacks.addStreamDecoderFilter(filter);
     };
 
