@@ -35,12 +35,12 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
     if (!access_token.has_value()) {
         ENVOY_LOG(debug, "no access token found. skip signing");
     } else {
-        ENVOY_LOG(debug, "Found access token: {}", *access_token);
+        ENVOY_LOG(debug, "found access token: {}", *access_token);
 
         auto& hashing_util = Envoy::Common::Crypto::UtilitySingleton::get();
         const std::vector<uint8_t> signing_key(app_secret_->begin(), app_secret_->end());
         const std::string appsecret_proof = Hex::encode(hashing_util.getSha256Hmac(signing_key, *access_token));
-        ENVOY_LOG(debug, "Computed appsecret_proof: {}", appsecret_proof);
+        ENVOY_LOG(debug, "computed appsecret_proof: {}", appsecret_proof);
 
         params[APPSECRET_PROOF_QUERY_PARAM] = appsecret_proof;
         auto stripped_path = Http::Utility::stripQueryString(headers.Path()->value());
