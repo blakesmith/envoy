@@ -10,6 +10,7 @@ namespace HttpFilters {
 namespace FbGraphApiSigner {
 
 const std::string ACCESS_TOKEN_QUERY_PARAM = "access_token";
+const std::string APPSECRET_PROOF_QUERY_PARAM = "appsecret_proof";
 
 Filter::Filter(const std::shared_ptr<std::string>& app_secret) : app_secret_(app_secret) { }
 
@@ -21,7 +22,7 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
         return Http::FilterHeadersStatus::Continue;
     }
 
-    const auto& params = Http::Utility::parseAndDecodeQueryString(headers.getPathValue());
+    auto params = Http::Utility::parseAndDecodeQueryString(headers.getPathValue());
     const auto& access_token_it = params.find(ACCESS_TOKEN_QUERY_PARAM);
 
     if (access_token_it == params.end()) {
@@ -34,6 +35,10 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
         const std::vector<uint8_t> signing_key(app_secret_->begin(), app_secret_->end());
         const std::string appsecret_proof = Hex::encode(hashing_util.getSha256Hmac(signing_key, access_token));
         ENVOY_LOG(debug, "Computed appsecret_proof: {}", appsecret_proof);
+
+        params[APPSECRET_PROOF_QUERY_PARAM] = appsecret_proof;
+        auto newPath = Http::Utility::queryParamsToString(params);
+        headers.setPath(newPath);
     }
 
     return Http::FilterHeadersStatus::Continue;
