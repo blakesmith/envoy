@@ -2,6 +2,7 @@
 
 #include "source/common/common/hex.h"
 #include "source/common/crypto/utility.h"
+#include "source/common/http/headers.h"
 #include "source/common/http/utility.h"
 
 namespace Envoy {
@@ -11,6 +12,7 @@ namespace FbGraphApiSigner {
 
 const std::string ACCESS_TOKEN_QUERY_PARAM = "access_token";
 const std::string APPSECRET_PROOF_QUERY_PARAM = "appsecret_proof";
+const std::string AUTHORIZATION_BEARER_PREFIX = "Bearer ";
 
 Filter::Filter(const std::shared_ptr<std::string>& app_secret) : app_secret_(app_secret) { }
 
@@ -44,16 +46,30 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
     return Http::FilterHeadersStatus::Continue;
 }
 
-absl::optional<std::string> Filter::extractAccessToken(__attribute__ ((unused)) const Http::RequestHeaderMap& headers,
-                                                       const Http::Utility::QueryParams& queryParams) {
-    const auto& access_token_it = queryParams.find(ACCESS_TOKEN_QUERY_PARAM);
+absl::optional<absl::string_view> Filter::extractAccessToken(const Http::RequestHeaderMap& headers,
+                                                             const Http::Utility::QueryParams& queryParams) {
 
     // First, look for an access token in query params
+    const auto& access_token_it = queryParams.find(ACCESS_TOKEN_QUERY_PARAM);
     if (access_token_it != queryParams.end()) {
         return absl::make_optional(access_token_it->second);
-    } else {
-        return absl::nullopt;
     }
+
+    // Then, look in the Authorization header.
+    const auto authorization_header = headers.get(Http::CustomHeaders::get().Authorization);
+    if (!authorization_header.empty()) {
+        const auto header_value = authorization_header[0]->value().getStringView();
+        const auto token_pos = header_value.find(AUTHORIZATION_BEARER_PREFIX);
+        if (token_pos == absl::string_view::npos) {
+            ENVOY_LOG(debug, "Authorization header found, but no bearer prefix");
+            return absl::nullopt;
+        } else {
+            return absl::make_optional(header_value.substr(token_pos + AUTHORIZATION_BEARER_PREFIX.size()));
+        }
+    }
+
+    // Didn't find an access token anywhere.
+    return absl::nullopt;
 }
 
 } // namespace FbGraphApiSigner
