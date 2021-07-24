@@ -31,10 +31,7 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
     }
 
     auto access_token = Filter::extractAccessToken(headers, params);
-
-    if (!access_token.has_value()) {
-        ENVOY_LOG(debug, "no access token found. skip signing");
-    } else {
+    if (access_token.has_value()) {
         ENVOY_LOG(debug, "found access token: {}", *access_token);
 
         auto& hashing_util = Envoy::Common::Crypto::UtilitySingleton::get();
@@ -48,12 +45,12 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
         headers.setPath(new_path);
     }
 
+    ENVOY_LOG(debug, "no access token found. skip signing");
     return Http::FilterHeadersStatus::Continue;
 }
 
 absl::optional<absl::string_view> Filter::extractAccessToken(const Http::RequestHeaderMap& headers,
                                                              const Http::Utility::QueryParams& queryParams) {
-
     // First, look for an access token in query params
     const auto& access_token_it = queryParams.find(ACCESS_TOKEN_QUERY_PARAM);
     if (access_token_it != queryParams.end()) {
@@ -66,7 +63,7 @@ absl::optional<absl::string_view> Filter::extractAccessToken(const Http::Request
         const auto header_value = authorization_header[0]->value().getStringView();
         const auto token_pos = header_value.find(AUTHORIZATION_BEARER_PREFIX);
         if (token_pos == absl::string_view::npos) {
-            ENVOY_LOG(debug, "Authorization header found, but no bearer prefix");
+            ENVOY_LOG(debug, "authorization header found, but no bearer prefix");
             return absl::nullopt;
         } else {
             return absl::make_optional(header_value.substr(token_pos + AUTHORIZATION_BEARER_PREFIX.size()));

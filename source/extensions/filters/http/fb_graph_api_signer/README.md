@@ -3,7 +3,10 @@
 This Envoy HTTP filter can be used to generate `appsecret_proof`
 signed values
 for
-[secure graph API requests](https://developers.facebook.com/docs/graph-api/securing-requests/).
+[secure graph API requests](https://developers.facebook.com/docs/graph-api/securing-requests/). The
+Graph API will validate the `appsecret_proof`, even if your Facebook
+application does not require the appsecret proof in your application's
+API settings.
 
 The filter will look for access tokens in the following places, and
 use the access token for signing:
