@@ -23,17 +23,16 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
     }
 
     auto params = Http::Utility::parseAndDecodeQueryString(headers.getPathValue());
-    const auto& access_token_it = params.find(ACCESS_TOKEN_QUERY_PARAM);
+    auto access_token = Filter::extractAccessToken(headers, params);
 
-    if (access_token_it == params.end()) {
+    if (!access_token.has_value()) {
         ENVOY_LOG(debug, "no access token found. skip signing");
     } else {
-        auto access_token = access_token_it->second;
-        ENVOY_LOG(debug, "Found access token: {}", access_token);
+        ENVOY_LOG(debug, "Found access token: {}", *access_token);
 
         auto& hashing_util = Envoy::Common::Crypto::UtilitySingleton::get();
         const std::vector<uint8_t> signing_key(app_secret_->begin(), app_secret_->end());
-        const std::string appsecret_proof = Hex::encode(hashing_util.getSha256Hmac(signing_key, access_token));
+        const std::string appsecret_proof = Hex::encode(hashing_util.getSha256Hmac(signing_key, *access_token));
         ENVOY_LOG(debug, "Computed appsecret_proof: {}", appsecret_proof);
 
         params[APPSECRET_PROOF_QUERY_PARAM] = appsecret_proof;
@@ -43,6 +42,18 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
     }
 
     return Http::FilterHeadersStatus::Continue;
+}
+
+absl::optional<std::string> Filter::extractAccessToken(__attribute__ ((unused)) const Http::RequestHeaderMap& headers,
+                                                       const Http::Utility::QueryParams& queryParams) {
+    const auto& access_token_it = queryParams.find(ACCESS_TOKEN_QUERY_PARAM);
+
+    // First, look for an access token in query params
+    if (access_token_it != queryParams.end()) {
+        return absl::make_optional(access_token_it->second);
+    } else {
+        return absl::nullopt;
+    }
 }
 
 } // namespace FbGraphApiSigner

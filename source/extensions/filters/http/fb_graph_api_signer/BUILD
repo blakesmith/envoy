@@ -13,6 +13,9 @@ envoy_cc_library(
     name = "fb_graph_api_signer_lib",
     srcs = ["fb_graph_api_signer_filter.cc"],
     hdrs = ["fb_graph_api_signer_filter.h"],
+    external_deps = [
+        "abseil_base",
+    ],
     deps = [
         "//envoy/http:filter_interface",
         "//source/extensions/filters/http/common:pass_through_filter_lib",

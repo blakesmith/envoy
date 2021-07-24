@@ -1,6 +1,7 @@
 #pragma once
 
 #include "envoy/http/filter.h"
+#include "envoy/http/query_params.h"
 #include "envoy/stats/scope.h"
 #include "source/extensions/filters/http/common/pass_through_filter.h"
 
@@ -17,6 +18,9 @@ public:
                                             bool end_stream) override;
 private:
     const std::shared_ptr<std::string> app_secret_;
+
+    static absl::optional<std::string> extractAccessToken(const Http::RequestHeaderMap& headers,
+                                                          const Http::Utility::QueryParams& query_params);
 };
 
 } // namespace FbGraphApiSigner
