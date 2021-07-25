@@ -14,7 +14,16 @@ const std::string ACCESS_TOKEN_QUERY_PARAM = "access_token";
 const std::string APPSECRET_PROOF_QUERY_PARAM = "appsecret_proof";
 const std::string AUTHORIZATION_BEARER_PREFIX = "Bearer ";
 
-Filter::Filter(const std::shared_ptr<std::string>& app_secret) : app_secret_(app_secret) { }
+FilterConfig::FilterConfig(const std::string& app_secret,
+                           __attribute__ ((unused)) const std::string& stats_prefix,
+                           __attribute__((unused)) Stats::Scope& scope) :
+    app_secret_(app_secret) { }
+
+Filter::Filter(const std::shared_ptr<FilterConfig>& config) : config_(config) { }
+
+const std::string& FilterConfig::app_secret() {
+    return app_secret_;
+}
 
 Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers, __attribute__((unused)) bool end_stream) {
     ENVOY_LOG(debug, "fb graph api signer, decode headers");
@@ -35,7 +44,7 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
         ENVOY_LOG(debug, "found access token: {}", *access_token);
 
         auto& hashing_util = Envoy::Common::Crypto::UtilitySingleton::get();
-        const std::vector<uint8_t> signing_key(app_secret_->begin(), app_secret_->end());
+        const std::vector<uint8_t> signing_key(config_->app_secret().begin(), config_->app_secret().end());
         const std::string appsecret_proof = Hex::encode(hashing_util.getSha256Hmac(signing_key, *access_token));
         ENVOY_LOG(debug, "computed appsecret_proof: {}", appsecret_proof);
 

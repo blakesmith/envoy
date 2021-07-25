@@ -10,14 +10,26 @@ namespace Extensions {
 namespace HttpFilters {
 namespace FbGraphApiSigner {
 
+class FilterConfig {
+public:
+    FilterConfig(const std::string& app_secret,
+                 const std::string& stats_prefix,
+                 Stats::Scope& scope);
+
+    const std::string& app_secret();
+
+private:
+    const std::string app_secret_;
+};
+
 class Filter: public Http::PassThroughDecoderFilter, Logger::Loggable<Logger::Id::filter> {
 public:
-    Filter(const std::shared_ptr<std::string>& app_secret_);
+    Filter(const std::shared_ptr<FilterConfig>& config);
 
     Http::FilterHeadersStatus decodeHeaders(Http::RequestHeaderMap& headers,
                                             bool end_stream) override;
 private:
-    const std::shared_ptr<std::string> app_secret_;
+    const std::shared_ptr<FilterConfig> config_;
 
     // Extract an access token from the request, so it can be used to
     // generate the appsecret_proof signature. The precedent is:

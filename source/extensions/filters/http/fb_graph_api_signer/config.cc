@@ -12,12 +12,12 @@ namespace FbGraphApiSigner {
 
 Http::FilterFactoryCb FbGraphApiSignerFilterFactory::createFilterFactoryFromProtoTyped(
     const envoy::extensions::filters::http::fb_graph_api_signer::v3::FbGraphApiSigner& config,
-    __attribute__((unused)) const std::string& stats_prefix, __attribute__((unused)) Server::Configuration::FactoryContext& context) {
+    const std::string& stats_prefix, Server::Configuration::FactoryContext& context) {
 
-    auto signing_key = std::make_shared<std::string>(config.app_secret());
+    auto filter_config = std::make_shared<FilterConfig>(config.app_secret(), stats_prefix, context.scope());
 
-    return [signing_key](Http::FilterChainFactoryCallbacks& callbacks) -> void {
-        auto filter = std::make_shared<Filter>(signing_key);
+    return [filter_config](Http::FilterChainFactoryCallbacks& callbacks) -> void {
+        auto filter = std::make_shared<Filter>(filter_config);
         callbacks.addStreamDecoderFilter(filter);
     };
 
