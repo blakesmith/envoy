@@ -32,8 +32,11 @@ public:
 
     const std::string& app_secret();
 
+    FilterStats& stats();
+
 private:
     const std::string app_secret_;
+    FilterStats stats_;
 };
 
 class Filter: public Http::PassThroughDecoderFilter, Logger::Loggable<Logger::Id::filter> {
@@ -51,7 +54,7 @@ private:
     // 2. Look for an access token in the 'Authorization: Bearer <MY_ACCESS_TOKEN>' header
     //
     // If no access tokens are found, skip signing and pass the request through
-    static absl::optional<absl::string_view> extractAccessToken(const Http::RequestHeaderMap& headers,
+    absl::optional<absl::string_view> extractAccessToken(const Http::RequestHeaderMap& headers,
                                                                 const Http::Utility::QueryParams& query_params);
 };
 

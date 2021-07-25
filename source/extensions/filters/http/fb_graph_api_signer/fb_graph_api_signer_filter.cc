@@ -13,16 +13,25 @@ namespace FbGraphApiSigner {
 const std::string ACCESS_TOKEN_QUERY_PARAM = "access_token";
 const std::string APPSECRET_PROOF_QUERY_PARAM = "appsecret_proof";
 const std::string AUTHORIZATION_BEARER_PREFIX = "Bearer ";
+const std::string SIGNER_STAT_PREFIX = "fb_graph_api_signer.";
 
 FilterConfig::FilterConfig(const std::string& app_secret,
-                           __attribute__ ((unused)) const std::string& stats_prefix,
-                           __attribute__((unused)) Stats::Scope& scope) :
-    app_secret_(app_secret) { }
+                           const std::string& stats_prefix,
+                           Stats::Scope& scope) :
+    app_secret_(app_secret),
+    stats_({
+        FB_GRAPH_API_SIGNER_FILTER_STATS(POOL_COUNTER_PREFIX(scope, stats_prefix + SIGNER_STAT_PREFIX))
+    })
+{ }
 
 Filter::Filter(const std::shared_ptr<FilterConfig>& config) : config_(config) { }
 
 const std::string& FilterConfig::app_secret() {
     return app_secret_;
+}
+
+FilterStats& FilterConfig::stats() {
+    return stats_;
 }
 
 Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers, __attribute__((unused)) bool end_stream) {
@@ -36,6 +45,7 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
     auto params = Http::Utility::parseAndDecodeQueryString(headers.getPathValue());
     if (params.count(APPSECRET_PROOF_QUERY_PARAM) > 0) {
         ENVOY_LOG(debug, "existing appsecret_proof found. skip signing.");
+        config_->stats().existing_appsecret_proof_.inc();
         return Http::FilterHeadersStatus::Continue;
     }
 
@@ -52,6 +62,7 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
         auto stripped_path = Http::Utility::stripQueryString(headers.Path()->value());
         auto new_path = stripped_path + Http::Utility::queryParamsToString(params);
         headers.setPath(new_path);
+        config_->stats().signing_added_.inc();
     }
 
     ENVOY_LOG(debug, "no access token found. skip signing");
@@ -63,6 +74,7 @@ absl::optional<absl::string_view> Filter::extractAccessToken(const Http::Request
     // First, look for an access token in query params
     const auto& access_token_it = queryParams.find(ACCESS_TOKEN_QUERY_PARAM);
     if (access_token_it != queryParams.end()) {
+        config_->stats().query_param_access_token_.inc();
         return absl::make_optional(access_token_it->second);
     }
 
@@ -73,8 +85,10 @@ absl::optional<absl::string_view> Filter::extractAccessToken(const Http::Request
         const auto token_pos = header_value.find(AUTHORIZATION_BEARER_PREFIX);
         if (token_pos == absl::string_view::npos) {
             ENVOY_LOG(debug, "authorization header found, but no bearer prefix");
+            config_->stats().missing_bearer_prefix_.inc();
             return absl::nullopt;
         } else {
+            config_->stats().auth_header_access_token_.inc();
             return absl::make_optional(header_value.substr(token_pos + AUTHORIZATION_BEARER_PREFIX.size()));
         }
     }
