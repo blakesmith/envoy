@@ -3,12 +3,26 @@
 #include "envoy/http/filter.h"
 #include "envoy/http/query_params.h"
 #include "envoy/stats/scope.h"
+#include "envoy/stats/stats_macros.h"
 #include "source/extensions/filters/http/common/pass_through_filter.h"
 
 namespace Envoy {
 namespace Extensions {
 namespace HttpFilters {
 namespace FbGraphApiSigner {
+
+// clang-format off
+#define FB_GRAPH_API_SIGNER_FILTER_STATS(COUNTER) \
+    COUNTER(signing_added) \
+    COUNTER(existing_appsecret_proof) \
+    COUNTER(query_param_access_token) \
+    COUNTER(auth_header_access_token) \
+    COUNTER(missing_bearer_prefix)
+// clang-format on
+
+struct FilterStats {
+    FB_GRAPH_API_SIGNER_FILTER_STATS(GENERATE_COUNTER_STRUCT)
+};
 
 class FilterConfig {
 public:
